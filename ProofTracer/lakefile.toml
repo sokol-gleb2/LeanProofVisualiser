@@ -1,0 +1,14 @@
+name = "ProofTracer"
+version = "0.1.0"
+defaultTargets = ["ProofTracer"]
+
+[[lean_lib]]
+name = "ProofTracer"
+
+[[lean_exe]]
+name = "proofTracer"
+root = "Main"
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"

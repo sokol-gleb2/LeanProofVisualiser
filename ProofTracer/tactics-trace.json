@@ -1,0 +1,64 @@
+{"steps":
+ [{"tactic": "constructor",
+   "preState":
+   {"goals":
+    [{"target": "p ∧ q",
+      "goalId": "_uniq.16",
+      "context":
+      [{"userName": "p", "type": "Prop"},
+       {"userName": "q", "type": "Prop"},
+       {"userName": "hp", "type": "p"},
+       {"userName": "hq", "type": "q"}]}]},
+   "postState":
+   {"goals":
+    [{"target": "p",
+      "goalId": "_uniq.23",
+      "context":
+      [{"userName": "p", "type": "Prop"},
+       {"userName": "q", "type": "Prop"},
+       {"userName": "hp", "type": "p"},
+       {"userName": "hq", "type": "q"}]},
+     {"target": "q",
+      "goalId": "_uniq.24",
+      "context":
+      [{"userName": "p", "type": "Prop"},
+       {"userName": "q", "type": "Prop"},
+       {"userName": "hp", "type": "p"},
+       {"userName": "hq", "type": "q"}]}]}},
+  {"tactic": "exact hp",
+   "preState":
+   {"goals":
+    [{"target": "p",
+      "goalId": "_uniq.23",
+      "context":
+      [{"userName": "p", "type": "Prop"},
+       {"userName": "q", "type": "Prop"},
+       {"userName": "hp", "type": "p"},
+       {"userName": "hq", "type": "q"}]},
+     {"target": "q",
+      "goalId": "_uniq.24",
+      "context":
+      [{"userName": "p", "type": "Prop"},
+       {"userName": "q", "type": "Prop"},
+       {"userName": "hp", "type": "p"},
+       {"userName": "hq", "type": "q"}]}]},
+   "postState":
+   {"goals":
+    [{"target": "q",
+      "goalId": "_uniq.24",
+      "context":
+      [{"userName": "p", "type": "Prop"},
+       {"userName": "q", "type": "Prop"},
+       {"userName": "hp", "type": "p"},
+       {"userName": "hq", "type": "q"}]}]}},
+  {"tactic": "exact hq",
+   "preState":
+   {"goals":
+    [{"target": "q",
+      "goalId": "_uniq.24",
+      "context":
+      [{"userName": "p", "type": "Prop"},
+       {"userName": "q", "type": "Prop"},
+       {"userName": "hp", "type": "p"},
+       {"userName": "hq", "type": "q"}]}]},
+   "postState": {"goals": []}}]}

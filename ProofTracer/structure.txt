@@ -1,0 +1,23 @@
+Currently:
+---
+ProofTracer.lean
+    ↓
+trace_step constructor
+trace_step exact hp
+    ↓
+ProofTrace.lean
+    ↓
+trace.jsonl
+
+
+With Python:
+---
+Normal Lean file
+    ↓
+Python rewrites it
+    ↓
+Adds trace_step everywhere
+    ↓
+Produces InstrumentedInput.lean
+    ↓
+Lean runs that file
