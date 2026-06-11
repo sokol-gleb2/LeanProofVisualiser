@@ -1,0 +1,234 @@
+{
+  "metadata": {
+    "nodeCount": 8,
+    "edgeCount": 7,
+    "stepCount": 3,
+    "rootGoalIds": [
+      "_uniq.16"
+    ],
+    "leafGoalIds": [
+      "_uniq.23",
+      "_uniq.24"
+    ],
+    "openLeafGoalIds": [],
+    "solvedGoalIds": [
+      "_uniq.23",
+      "_uniq.24"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "_uniq.16",
+      "kind": "goal",
+      "label": "p ∧ q",
+      "data": {
+        "goalId": "_uniq.16",
+        "target": "p ∧ q",
+        "context": [
+          {
+            "userName": "p",
+            "type": "Prop"
+          },
+          {
+            "userName": "q",
+            "type": "Prop"
+          },
+          {
+            "userName": "hp",
+            "type": "p"
+          },
+          {
+            "userName": "hq",
+            "type": "q"
+          }
+        ]
+      }
+    },
+    {
+      "id": "_uniq.23",
+      "kind": "goal",
+      "label": "p",
+      "data": {
+        "goalId": "_uniq.23",
+        "target": "p",
+        "context": [
+          {
+            "userName": "p",
+            "type": "Prop"
+          },
+          {
+            "userName": "q",
+            "type": "Prop"
+          },
+          {
+            "userName": "hp",
+            "type": "p"
+          },
+          {
+            "userName": "hq",
+            "type": "q"
+          }
+        ]
+      }
+    },
+    {
+      "id": "_uniq.24",
+      "kind": "goal",
+      "label": "q",
+      "data": {
+        "goalId": "_uniq.24",
+        "target": "q",
+        "context": [
+          {
+            "userName": "p",
+            "type": "Prop"
+          },
+          {
+            "userName": "q",
+            "type": "Prop"
+          },
+          {
+            "userName": "hp",
+            "type": "p"
+          },
+          {
+            "userName": "hq",
+            "type": "q"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tactic:0",
+      "kind": "tactic",
+      "label": "constructor",
+      "data": {
+        "stepIndex": 0,
+        "tacticText": "constructor",
+        "tacticKind": "constructor",
+        "rawTactic": "(Tactic.tacticSeq (Tactic.tacticSeq1Indented [(Tactic.constructor \"constructor\")]))",
+        "focusedGoalId": "_uniq.16",
+        "preGoals": [
+          "_uniq.16"
+        ],
+        "postGoals": [
+          "_uniq.23",
+          "_uniq.24"
+        ]
+      }
+    },
+    {
+      "id": "tactic:1",
+      "kind": "tactic",
+      "label": "exact hp",
+      "data": {
+        "stepIndex": 1,
+        "tacticText": "exact hp",
+        "tacticKind": "exact",
+        "rawTactic": "(Tactic.tacticSeq (Tactic.tacticSeq1Indented [(Tactic.exact \"exact\" `hp)]))",
+        "focusedGoalId": "_uniq.23",
+        "preGoals": [
+          "_uniq.23",
+          "_uniq.24"
+        ],
+        "postGoals": [
+          "_uniq.24"
+        ]
+      }
+    },
+    {
+      "id": "_uniq.23:solved",
+      "kind": "terminal",
+      "label": "solved",
+      "data": {
+        "goalId": "_uniq.23",
+        "status": "solved"
+      }
+    },
+    {
+      "id": "tactic:2",
+      "kind": "tactic",
+      "label": "exact hq",
+      "data": {
+        "stepIndex": 2,
+        "tacticText": "exact hq",
+        "tacticKind": "exact",
+        "rawTactic": "(Tactic.tacticSeq (Tactic.tacticSeq1Indented [(Tactic.exact \"exact\" `hq)]))",
+        "focusedGoalId": "_uniq.24",
+        "preGoals": [
+          "_uniq.24"
+        ],
+        "postGoals": []
+      }
+    },
+    {
+      "id": "_uniq.24:solved",
+      "kind": "terminal",
+      "label": "solved",
+      "data": {
+        "goalId": "_uniq.24",
+        "status": "solved"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "_uniq.16",
+      "target": "tactic:0",
+      "kind": "applies",
+      "data": {
+        "stepIndex": 0
+      }
+    },
+    {
+      "source": "tactic:0",
+      "target": "_uniq.23",
+      "kind": "produces",
+      "data": {
+        "stepIndex": 0,
+        "childIndex": 0
+      }
+    },
+    {
+      "source": "tactic:0",
+      "target": "_uniq.24",
+      "kind": "produces",
+      "data": {
+        "stepIndex": 0,
+        "childIndex": 1
+      }
+    },
+    {
+      "source": "_uniq.23",
+      "target": "tactic:1",
+      "kind": "applies",
+      "data": {
+        "stepIndex": 1
+      }
+    },
+    {
+      "source": "tactic:1",
+      "target": "_uniq.23:solved",
+      "kind": "resolves",
+      "data": {
+        "stepIndex": 1
+      }
+    },
+    {
+      "source": "_uniq.24",
+      "target": "tactic:2",
+      "kind": "applies",
+      "data": {
+        "stepIndex": 2
+      }
+    },
+    {
+      "source": "tactic:2",
+      "target": "_uniq.24:solved",
+      "kind": "resolves",
+      "data": {
+        "stepIndex": 2
+      }
+    }
+  ]
+}
