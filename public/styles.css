@@ -1,0 +1,379 @@
+:root {
+  --bg: #f4f1e8;
+  --panel: rgba(255, 252, 245, 0.88);
+  --panel-strong: rgba(255, 250, 240, 0.96);
+  --line: #d2c6b4;
+  --ink: #1f1f1a;
+  --muted: #6d655d;
+  --goal: #7d8f44;
+  --goal-soft: #e8f0c8;
+  --tactic: #b95c3d;
+  --tactic-soft: #f7d3c5;
+  --terminal: #3d7c75;
+  --terminal-soft: #d1efea;
+  --accent: #d8a728;
+  --shadow: 0 20px 50px rgba(56, 40, 20, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+  background:
+    radial-gradient(circle at top left, rgba(216, 167, 40, 0.2), transparent 25%),
+    radial-gradient(circle at top right, rgba(185, 92, 61, 0.14), transparent 22%),
+    linear-gradient(180deg, #f7f3ea 0%, #efe8dc 100%);
+  color: var(--ink);
+}
+
+body {
+  min-height: 100vh;
+}
+
+button,
+input,
+label {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3.4vw, 3.2rem);
+  letter-spacing: -0.04em;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--tactic);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.toolbar button,
+.file-picker {
+  border: 1px solid rgba(31, 31, 26, 0.1);
+  background: var(--panel-strong);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(31, 31, 26, 0.08);
+}
+
+.toolbar button:hover,
+.file-picker:hover {
+  transform: translateY(-1px);
+}
+
+.file-picker {
+  position: relative;
+  overflow: hidden;
+}
+
+.file-picker input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(300px, 0.8fr);
+  gap: 20px;
+}
+
+.canvas-panel,
+.details-card {
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow);
+}
+
+.canvas-panel {
+  border-radius: 26px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  min-height: 78vh;
+}
+
+.canvas-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.canvas-meta h2,
+.details-card h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.canvas-meta p,
+.details-body p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(31, 31, 26, 0.08);
+}
+
+.legend-goal::before,
+.legend-tactic::before,
+.legend-terminal::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-goal::before {
+  background: var(--goal);
+}
+
+.legend-tactic::before {
+  background: var(--tactic);
+}
+
+.legend-terminal::before {
+  background: var(--terminal);
+}
+
+.canvas-container {
+  position: relative;
+  flex: 1;
+  border-radius: 22px;
+  border: 1px solid rgba(31, 31, 26, 0.08);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)),
+    linear-gradient(90deg, rgba(31, 31, 26, 0.03) 1px, transparent 1px),
+    linear-gradient(rgba(31, 31, 26, 0.03) 1px, transparent 1px);
+  background-size: auto, 40px 40px, 40px 40px;
+  overflow: hidden;
+}
+
+#graph-svg {
+  width: 100%;
+  height: 100%;
+  min-height: 640px;
+  display: block;
+}
+
+#arrowhead path {
+  fill: rgba(62, 57, 49, 0.64);
+}
+
+.edge-path {
+  fill: none;
+  stroke: rgba(62, 57, 49, 0.38);
+  stroke-width: 2.5;
+  marker-end: url(#arrowhead);
+}
+
+.edge-label {
+  font-size: 12px;
+  fill: var(--muted);
+}
+
+.node-card {
+  cursor: pointer;
+}
+
+.node-shape {
+  stroke-width: 2;
+  filter: drop-shadow(0 12px 18px rgba(31, 31, 26, 0.08));
+}
+
+.node-card.goal .node-shape {
+  fill: var(--goal-soft);
+  stroke: var(--goal);
+}
+
+.node-card.tactic .node-shape {
+  fill: var(--tactic-soft);
+  stroke: var(--tactic);
+}
+
+.node-card.terminal .node-shape {
+  fill: var(--terminal-soft);
+  stroke: var(--terminal);
+}
+
+.node-card.selected .node-shape {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.node-title {
+  fill: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.node-subtitle {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
+.details-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.details-card {
+  border-radius: 24px;
+  padding: 18px;
+}
+
+.details-body {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-block {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(31, 31, 26, 0.08);
+  border-radius: 18px;
+  padding: 12px 14px;
+}
+
+.detail-block h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.detail-list {
+  display: grid;
+  gap: 8px;
+}
+
+.detail-row {
+  display: grid;
+  gap: 2px;
+}
+
+.detail-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.detail-value {
+  margin: 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.context-list {
+  display: grid;
+  gap: 10px;
+}
+
+.context-item {
+  border-left: 3px solid rgba(125, 143, 68, 0.35);
+  padding-left: 10px;
+}
+
+.context-name {
+  font-weight: 700;
+}
+
+.empty-state {
+  position: absolute;
+  inset: 24px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 24px;
+  border: 1px dashed rgba(31, 31, 26, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.empty-state.hidden {
+  display: none;
+}
+
+code {
+  font-family: "SFMono-Regular", "Menlo", "Monaco", monospace;
+  font-size: 0.92em;
+}
+
+@media (max-width: 1080px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .canvas-panel {
+    min-height: 60vh;
+  }
+
+  #graph-svg {
+    min-height: 520px;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 14px;
+  }
+
+  .topbar,
+  .canvas-meta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar {
+    justify-content: flex-start;
+  }
+}

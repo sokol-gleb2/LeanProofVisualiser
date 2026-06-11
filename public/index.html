@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lean Proof DAG Viewer</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Lean Visualiser</p>
+          <h1>Proof DAG Viewer</h1>
+        </div>
+        <div class="toolbar">
+          <button id="fit-view-button" type="button">Fit View</button>
+          <button id="reset-view-button" type="button">Reset</button>
+          <label class="file-picker">
+            <span>Load JSON</span>
+            <input id="file-input" type="file" accept=".json,application/json" />
+          </label>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="canvas-panel">
+          <div class="canvas-meta">
+            <div>
+              <h2>Graph</h2>
+              <p id="graph-summary">Loading DAG…</p>
+            </div>
+            <div class="legend">
+              <span class="legend-chip legend-goal">Goal</span>
+              <span class="legend-chip legend-tactic">Tactic</span>
+              <span class="legend-chip legend-terminal">Solved</span>
+            </div>
+          </div>
+
+          <div id="canvas-container" class="canvas-container">
+            <svg id="graph-svg" aria-label="Proof DAG visualisation">
+              <defs>
+                <marker
+                  id="arrowhead"
+                  markerWidth="12"
+                  markerHeight="12"
+                  refX="10"
+                  refY="6"
+                  orient="auto"
+                  markerUnits="userSpaceOnUse"
+                >
+                  <path d="M 0 0 L 12 6 L 0 12 z"></path>
+                </marker>
+              </defs>
+              <g id="viewport">
+                <g id="edges-layer"></g>
+                <g id="nodes-layer"></g>
+              </g>
+            </svg>
+            <div id="empty-state" class="empty-state hidden">
+              <h3>No DAG loaded</h3>
+              <p>
+                Start a local server and place <code>proof_dag.json</code> in this folder,
+                or load a JSON file manually.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <aside class="details-panel">
+          <section class="details-card">
+            <h2>Selected Node</h2>
+            <div id="node-details" class="details-body">
+              <p>Select a node to inspect its goal, tactic, or terminal metadata.</p>
+            </div>
+          </section>
+
+          <section class="details-card">
+            <h2>Trace Stats</h2>
+            <div id="trace-stats" class="details-body">
+              <p>Waiting for DAG data…</p>
+            </div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
