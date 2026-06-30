@@ -1,0 +1,21 @@
+{
+  "sourcePath": "/Users/glebsokolovski/Desktop/UNI/lean-visualiser/ProofTracer/TestInput.lean",
+  "declarations": [
+    {
+      "kind": "theorem",
+      "name": "two_dvd_of_sq",
+      "statement": "{n : ℕ} (h : 2 ∣ n ^ 2) : 2 ∣ n",
+      "header": "theorem two_dvd_of_sq {n : ℕ} (h : 2 ∣ n ^ 2) : 2 ∣ n",
+      "startLine": 6,
+      "endLine": 6
+    },
+    {
+      "kind": "theorem",
+      "name": "sqrt2_irrational",
+      "statement": "(p q : ℤ) (hq : q ≠ 0) (hcop : Int.gcd p q = 1) (heq : p ^ 2 = 2 * q ^ 2) : False",
+      "header": "theorem sqrt2_irrational (p q : ℤ) (hq : q ≠ 0) (hcop : Int.gcd p q = 1) (heq : p ^ 2 = 2 * q ^ 2) : False",
+      "startLine": 12,
+      "endLine": 14
+    }
+  ]
+}

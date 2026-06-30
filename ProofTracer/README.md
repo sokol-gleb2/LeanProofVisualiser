@@ -6,6 +6,10 @@ This package traces Lean tactics into `trace.jsonl` entries with:
 - `tactic`: the tactic text that was evaluated
 - `postState`: goals and local context after the tactic
 
+It also extracts top-level declaration headers from the source file into
+`trace.metadata.json` so the visualiser can display theorem statements, names,
+and binders alongside the tactic trace.
+
 There are two parts:
 
 - [ProofTracer/ProofTrace.lean](/Users/glebsokolovski/Desktop/UNI/lean-visualiser/ProofTracer/ProofTracer/ProofTrace.lean:1) defines the `trace_step` tactic.
@@ -27,6 +31,7 @@ That does:
 3. Write `InstrumentedInput.lean`
 4. Run `lake env lean InstrumentedInput.lean`
 5. Produce `trace.jsonl`
+6. Produce `trace.metadata.json`
 
 If you only want the rewritten Lean file without running Lean:
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 import re
 import sys
@@ -11,12 +11,24 @@ OPEN_LINE = "open ProofTrace"
 
 BLOCK_START_RE = re.compile(r"(?<![-\w.])by\s*$")
 INLINE_BY_RE = re.compile(r"^(?P<prefix>.*\bby)\s+(?P<body>.+?)\s*$")
+DECL_START_RE = re.compile(r"^(theorem|lemma|example|corollary)\b")
+DECL_NAME_RE = re.compile(r"^(theorem|lemma|corollary)\s+([^\s:(\[{]+)")
 
 
 @dataclass
 class ByBlock:
     parent_indent: int
     child_indent: int | None = None
+
+
+@dataclass(frozen=True)
+class DeclarationHeader:
+    kind: str
+    name: str
+    statement: str
+    header: str
+    startLine: int
+    endLine: int
 
 
 def leading_spaces(line: str) -> int:
@@ -110,6 +122,85 @@ def ensure_imports(lines: list[str]) -> list[str]:
     if prefix:
         prefix.append("")
     return prefix + output
+
+
+def _normalise_header_text(lines: list[str]) -> str:
+    joined = " ".join(line.strip() for line in lines if line.strip())
+    return re.sub(r"\s+", " ", joined).strip()
+
+
+def _parse_declaration_header(header_lines: list[str], start_line: int, end_line: int) -> DeclarationHeader | None:
+    header = _normalise_header_text(header_lines)
+    if not header:
+        return None
+
+    header = re.sub(r"\s*:=\s*by\s*$", "", header)
+    header = re.sub(r"\s+$", "", header)
+
+    kind_match = DECL_START_RE.match(header)
+    if not kind_match:
+        return None
+
+    kind = kind_match.group(1)
+    name = "anonymous"
+    name_match = DECL_NAME_RE.match(header)
+    if name_match:
+        name = name_match.group(2)
+
+    statement = header[len(kind) :].strip()
+    if name != "anonymous" and statement.startswith(name):
+        statement = statement[len(name) :].strip()
+
+    return DeclarationHeader(
+        kind=kind,
+        name=name,
+        statement=statement,
+        header=header,
+        startLine=start_line,
+        endLine=end_line,
+    )
+
+
+def extract_declarations(source: str) -> list[DeclarationHeader]:
+    lines = source.splitlines()
+    declarations: list[DeclarationHeader] = []
+    pending_lines: list[str] = []
+    pending_start: int | None = None
+
+    for line_number, line in enumerate(lines, start=1):
+        stripped = line.strip()
+
+        if pending_lines:
+            pending_lines.append(line)
+            if stripped.endswith(":= by"):
+                parsed = _parse_declaration_header(pending_lines, pending_start or line_number, line_number)
+                if parsed is not None:
+                    declarations.append(parsed)
+                pending_lines = []
+                pending_start = None
+            continue
+
+        if leading_spaces(line) != 0:
+            continue
+        if stripped.startswith("--") or stripped == "":
+            continue
+        if not DECL_START_RE.match(stripped):
+            continue
+
+        pending_lines = [line]
+        pending_start = line_number
+        if stripped.endswith(":= by"):
+            parsed = _parse_declaration_header(pending_lines, pending_start, line_number)
+            if parsed is not None:
+                declarations.append(parsed)
+            pending_lines = []
+            pending_start = None
+
+    return declarations
+
+
+def extract_declarations_payload(source: str) -> list[dict[str, object]]:
+    return [asdict(declaration) for declaration in extract_declarations(source)]
 
 
 def instrument(source: str) -> str:

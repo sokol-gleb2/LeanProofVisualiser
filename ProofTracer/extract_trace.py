@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 import argparse
+import json
 import subprocess
 import sys
 
-from instrument_lean import instrument
+from instrument_lean import extract_declarations_payload, instrument
 
 
 def parse_args() -> argparse.Namespace:
@@ -27,6 +28,12 @@ def parse_args() -> argparse.Namespace:
         help="Path of the trace file emitted by Lean",
     )
     parser.add_argument(
+        "--metadata-file",
+        type=Path,
+        default=Path("trace.metadata.json"),
+        help="Path of the declaration metadata sidecar JSON file",
+    )
+    parser.add_argument(
         "--lake-root",
         type=Path,
         default=Path(__file__).resolve().parent,
@@ -40,9 +47,17 @@ def main() -> None:
     lake_root = args.lake_root.resolve()
     output_path = args.output if args.output.is_absolute() else lake_root / args.output
     trace_path = args.trace_file if args.trace_file.is_absolute() else lake_root / args.trace_file
+    metadata_path = (
+        args.metadata_file if args.metadata_file.is_absolute() else lake_root / args.metadata_file
+    )
 
     source = args.input.read_text()
     output_path.write_text(instrument(source))
+    metadata = {
+        "sourcePath": str(args.input.resolve()),
+        "declarations": extract_declarations_payload(source),
+    }
+    metadata_path.write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n")
 
     if trace_path.exists():
         trace_path.unlink()
@@ -55,6 +70,7 @@ def main() -> None:
 
     print(f"Instrumented file: {output_path}")
     print(f"Trace file: {trace_path}")
+    print(f"Metadata file: {metadata_path}")
 
 
 if __name__ == "__main__":
