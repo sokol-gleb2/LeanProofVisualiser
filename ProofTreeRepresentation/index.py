@@ -8,6 +8,9 @@ from typing import Any
 
 DEFAULT_TRACE_PATH = Path(__file__).resolve().parent.parent / "ProofTracer" / "trace.jsonl"
 DEFAULT_OUTPUT_PATH = Path(__file__).resolve().parent / "proof_dag.json"
+DEFAULT_METADATA_PATH = (
+    Path(__file__).resolve().parent.parent / "ProofTracer" / "trace.metadata.json"
+)
 
 
 @dataclass(frozen=True)
@@ -39,6 +42,16 @@ class ProofStep:
     tacticText: str
     tacticKind: str
     postState: ProofStateSnapshot
+
+
+@dataclass(frozen=True)
+class DeclarationHeader:
+    kind: str
+    name: str
+    statement: str
+    header: str
+    startLine: int
+    endLine: int
 
 
 @dataclass
@@ -86,6 +99,28 @@ def _parse_step(raw: dict[str, Any]) -> ProofStep:
         tacticKind=str(raw["tacticKind"]),
         postState=_parse_state(raw["postState"]),
     )
+
+
+def load_metadata(path: str | Path) -> dict[str, Any]:
+    metadata_path = Path(path)
+    with metadata_path.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+
+    declarations = [
+        DeclarationHeader(
+            kind=str(item["kind"]),
+            name=str(item["name"]),
+            statement=str(item["statement"]),
+            header=str(item["header"]),
+            startLine=int(item["startLine"]),
+            endLine=int(item["endLine"]),
+        )
+        for item in payload.get("declarations", [])
+    ]
+    return {
+        "sourcePath": payload.get("sourcePath"),
+        "declarations": declarations,
+    }
 
 
 def load_trace(path: str | Path) -> list[ProofStep]:
@@ -136,12 +171,48 @@ def _make_terminal_node(goal_id: str, status: str) -> GraphNode:
     )
 
 
-def build_proof_dag(steps: list[ProofStep]) -> dict[str, Any]:
+def infer_root_step_indices(steps: list[ProofStep]) -> list[int]:
+    seen_goal_ids: set[str] = set()
+    root_indices: list[int] = []
+
+    for index, step in enumerate(steps):
+        if not step.preState.goals:
+            continue
+        focused_goal_id = step.preState.goals[0].goalId
+        if focused_goal_id not in seen_goal_ids:
+            root_indices.append(index)
+        seen_goal_ids.update(goal.goalId for goal in step.preState.goals)
+        seen_goal_ids.update(goal.goalId for goal in step.postState.goals)
+
+    return root_indices
+
+
+def build_proof_dag(
+    steps: list[ProofStep],
+    declarations: list[DeclarationHeader] | None = None,
+    source_path: str | None = None,
+) -> dict[str, Any]:
     nodes: dict[str, GraphNode] = {}
     edges: list[GraphEdge] = []
     root_goal_ids: list[str] = []
     solved_goal_ids: set[str] = set()
     expanded_goal_ids: set[str] = set()
+    declaration_payloads: list[dict[str, Any]] = []
+    declaration_by_root_goal_id: dict[str, dict[str, Any]] = {}
+    inferred_root_indices = set(infer_root_step_indices(steps))
+
+    if declarations:
+        for declaration, step_index in zip(declarations, sorted(inferred_root_indices)):
+            if step_index >= len(steps) or not steps[step_index].preState.goals:
+                continue
+            root_goal_id = steps[step_index].preState.goals[0].goalId
+            payload = {
+                **asdict(declaration),
+                "rootGoalId": root_goal_id,
+                "stepIndex": step_index,
+            }
+            declaration_payloads.append(payload)
+            declaration_by_root_goal_id[root_goal_id] = payload
 
     for index, step in enumerate(steps):
         if not step.preState.goals:
@@ -158,8 +229,13 @@ def build_proof_dag(steps: list[ProofStep]) -> dict[str, Any]:
         for goal in step.postState.goals:
             _add_goal_node(nodes, goal)
 
-        if index == 0:
+        if index in inferred_root_indices:
             root_goal_ids.append(focused_goal.goalId)
+
+        if focused_goal.goalId in declaration_by_root_goal_id:
+            nodes[focused_goal.goalId].data["declaration"] = declaration_by_root_goal_id[
+                focused_goal.goalId
+            ]
 
         nodes[tactic_id] = GraphNode(
             id=tactic_id,
@@ -244,14 +320,30 @@ def build_proof_dag(steps: list[ProofStep]) -> dict[str, Any]:
             "leafGoalIds": leaf_goal_ids,
             "openLeafGoalIds": open_leaf_goal_ids,
             "solvedGoalIds": sorted(solved_goal_ids),
+            "sourcePath": source_path,
+            "declarations": declaration_payloads,
+            "primaryDeclaration": declaration_payloads[0] if declaration_payloads else None,
         },
         "nodes": [asdict(node) for node in nodes.values()],
         "edges": [asdict(edge) for edge in edges],
     }
 
 
-def trace_to_dag(trace_path: str | Path) -> dict[str, Any]:
-    return build_proof_dag(load_trace(trace_path))
+def trace_to_dag(
+    trace_path: str | Path,
+    metadata_path: str | Path | None = None,
+) -> dict[str, Any]:
+    metadata: dict[str, Any] | None = None
+    if metadata_path is not None:
+        candidate = Path(metadata_path)
+        if candidate.exists():
+            metadata = load_metadata(candidate)
+
+    return build_proof_dag(
+        load_trace(trace_path),
+        declarations=metadata["declarations"] if metadata else None,
+        source_path=metadata["sourcePath"] if metadata else None,
+    )
 
 
 def main() -> None:
@@ -271,13 +363,18 @@ def main() -> None:
         help="Path to write the DAG JSON output.",
     )
     parser.add_argument(
+        "--metadata",
+        default=str(DEFAULT_METADATA_PATH),
+        help="Optional path to the declaration metadata JSON sidecar.",
+    )
+    parser.add_argument(
         "--pretty",
         action="store_true",
         help="Pretty-print the output JSON.",
     )
     args = parser.parse_args()
 
-    dag = trace_to_dag(args.trace_path)
+    dag = trace_to_dag(args.trace_path, metadata_path=args.metadata)
     indent = 2 if args.pretty else None
     payload = json.dumps(dag, indent=indent, ensure_ascii=False)
 
