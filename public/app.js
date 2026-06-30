@@ -6,6 +6,7 @@ const state = {
   offsetY: 0,
   layout: null,
   pointer: null,
+  activeGoalPopupId: null,
 };
 
 const dom = {
@@ -22,6 +23,7 @@ const dom = {
   resetViewButton: document.getElementById("reset-view-button"),
   emptyState: document.getElementById("empty-state"),
   canvasContainer: document.getElementById("canvas-container"),
+  goalPopup: null,
 };
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -51,6 +53,13 @@ function wireControls() {
   dom.svg.addEventListener("pointermove", continuePan);
   dom.svg.addEventListener("pointerup", endPan);
   dom.svg.addEventListener("pointerleave", endPan);
+
+  dom.goalPopup = createGoalPopup();
+  document.body.appendChild(dom.goalPopup);
+  document.addEventListener("click", handleDocumentClick);
+  dom.nodeDetails.addEventListener("click", handleGoalReferenceClick);
+  dom.traceStats.addEventListener("click", handleGoalReferenceClick);
+  dom.theoremDetails.addEventListener("click", handleGoalReferenceClick);
 }
 
 async function loadDefaultGraph() {
@@ -359,7 +368,7 @@ function renderNodeDetails(node) {
   const blocks = [];
   blocks.push(detailBlock("Summary", [
     detailRow("Kind", node.kind),
-    detailRow("ID", node.id),
+    detailRowHtml("ID", renderGoalReference(node.id)),
     detailRow("Label", node.label),
   ]));
 
@@ -381,7 +390,7 @@ function renderNodeDetails(node) {
 
     blocks.push(detailBlock("Goal", [
       detailRow("Target", node.data?.target || ""),
-      detailRow("Goal ID", node.data?.goalId || ""),
+      detailRowHtml("Goal ID", renderGoalReference(node.data?.goalId || "")),
     ]));
 
     if (node.data?.declaration) {
@@ -403,16 +412,16 @@ function renderNodeDetails(node) {
     blocks.push(detailBlock("Tactic", [
       detailRow("Text", node.data?.tacticText || ""),
       detailRow("Kind", node.data?.tacticKind || ""),
-      detailRow("Focused Goal", node.data?.focusedGoalId || ""),
-      detailRow("Pre Goals", (node.data?.preGoals || []).join(", ")),
-      detailRow("Post Goals", (node.data?.postGoals || []).join(", ")),
+      detailRowHtml("Focused Goal", renderGoalReference(node.data?.focusedGoalId || "")),
+      detailRowHtml("Pre Goals", renderGoalReferenceList(node.data?.preGoals || [])),
+      detailRowHtml("Post Goals", renderGoalReferenceList(node.data?.postGoals || [])),
     ]));
   }
 
   if (node.kind === "terminal") {
     blocks.push(detailBlock("Terminal", [
       detailRow("Status", node.data?.status || ""),
-      detailRow("Goal ID", node.data?.goalId || ""),
+      detailRowHtml("Goal ID", renderGoalReference(node.data?.goalId || "")),
     ]));
   }
 
@@ -436,7 +445,7 @@ function renderTheoremDetails(graph) {
     dom.theoremDetails.innerHTML = [
       detailBlock("Root Goal", [
         detailRow("Target", rootNode.data?.target || ""),
-        detailRow("Goal ID", rootNode.data?.goalId || ""),
+        detailRowHtml("Goal ID", renderGoalReference(rootNode.data?.goalId || "")),
         detailRow("Hypotheses", String(rootNode.data?.context?.length || 0)),
       ]),
     ].join("");
@@ -456,7 +465,7 @@ function renderTheoremDetails(graph) {
   if (rootNode) {
     blocks.push(detailBlock("Initial Goal", [
       detailRow("Target", rootNode.data?.target || ""),
-      detailRow("Goal ID", rootNode.data?.goalId || ""),
+      detailRowHtml("Goal ID", renderGoalReference(rootNode.data?.goalId || "")),
       detailRow("Hypotheses", String(rootNode.data?.context?.length || 0)),
     ]));
   }
@@ -479,9 +488,9 @@ function renderStats(graph) {
     detailRow("Edges", String(metadata.edgeCount ?? graph.edges.length)),
     detailRow("Steps", String(metadata.stepCount ?? 0)),
     detailRow("Declarations", String((metadata.declarations || []).length)),
-    detailRow("Roots", (metadata.rootGoalIds || []).join(", ") || "None"),
-    detailRow("Leaf Goals", (metadata.leafGoalIds || []).join(", ") || "None"),
-    detailRow("Open Leaves", (metadata.openLeafGoalIds || []).join(", ") || "None"),
+    detailRowHtml("Roots", renderGoalReferenceList(metadata.rootGoalIds || [])),
+    detailRowHtml("Leaf Goals", renderGoalReferenceList(metadata.leafGoalIds || [])),
+    detailRowHtml("Open Leaves", renderGoalReferenceList(metadata.openLeafGoalIds || [])),
   ]);
 }
 
@@ -517,6 +526,138 @@ function detailRow(label, value) {
       <div class="detail-label">${escapeHtml(label)}</div>
       <p class="detail-value">${escapeHtml(value || "—")}</p>
     </div>
+  `;
+}
+
+function detailRowHtml(label, valueMarkup) {
+  return `
+    <div class="detail-row">
+      <div class="detail-label">${escapeHtml(label)}</div>
+      <div class="detail-value">${valueMarkup || "—"}</div>
+    </div>
+  `;
+}
+
+function renderGoalReference(goalId) {
+  if (!goalId) {
+    return "—";
+  }
+
+  return `
+    <button type="button" class="goal-ref" data-goal-ref="${escapeHtml(goalId)}">
+      ${escapeHtml(goalId)}
+    </button>
+  `;
+}
+
+function renderGoalReferenceList(goalIds) {
+  if (!goalIds.length) {
+    return "None";
+  }
+
+  return `<div class="goal-ref-list">${goalIds.map((goalId) => renderGoalReference(goalId)).join("")}</div>`;
+}
+
+function handleGoalReferenceClick(event) {
+  const trigger = event.target.closest("[data-goal-ref]");
+  if (!trigger) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  toggleGoalPopup(trigger.dataset.goalRef, trigger);
+}
+
+function handleDocumentClick(event) {
+  if (!dom.goalPopup || dom.goalPopup.hidden) {
+    return;
+  }
+
+  const clickedTrigger = event.target.closest?.("[data-goal-ref]");
+  if (clickedTrigger || dom.goalPopup.contains(event.target)) {
+    return;
+  }
+
+  hideGoalPopup();
+}
+
+function createGoalPopup() {
+  const popup = document.createElement("div");
+  popup.className = "goal-popup";
+  popup.hidden = true;
+  return popup;
+}
+
+function toggleGoalPopup(goalId, trigger) {
+  if (state.activeGoalPopupId === goalId && !dom.goalPopup.hidden) {
+    hideGoalPopup();
+    return;
+  }
+
+  showGoalPopup(goalId, trigger);
+}
+
+function showGoalPopup(goalId, trigger) {
+  const summary = describeGoal(goalId);
+  dom.goalPopup.innerHTML = summary;
+  dom.goalPopup.hidden = false;
+  state.activeGoalPopupId = goalId;
+  positionGoalPopup(trigger);
+}
+
+function hideGoalPopup() {
+  if (!dom.goalPopup) {
+    return;
+  }
+
+  dom.goalPopup.hidden = true;
+  dom.goalPopup.innerHTML = "";
+  state.activeGoalPopupId = null;
+}
+
+function positionGoalPopup(trigger) {
+  const rect = trigger.getBoundingClientRect();
+  const popup = dom.goalPopup;
+  const margin = 10;
+  const maxX = window.innerWidth - popup.offsetWidth - margin;
+  const preferredLeft = rect.left;
+  const preferredTop = rect.bottom + margin;
+  const left = Math.max(margin, Math.min(preferredLeft, maxX));
+  let top = preferredTop;
+
+  if (top + popup.offsetHeight > window.innerHeight - margin) {
+    top = Math.max(margin, rect.top - popup.offsetHeight - margin);
+  }
+
+  popup.style.left = `${left}px`;
+  popup.style.top = `${top}px`;
+}
+
+function describeGoal(goalId) {
+  const goalNode = state.graph?.nodes?.find((node) => node.kind === "goal" && node.id === goalId);
+  if (goalNode) {
+    const contextSize = goalNode.data?.context?.length || 0;
+    return `
+      <div class="goal-popup-header">Goal ${escapeHtml(goalId)}</div>
+      <p>This is a goal to show <strong>${escapeHtml(goalNode.data?.target || "—")}</strong>.</p>
+      <p>${contextSize} hypothesis${contextSize === 1 ? "" : "es"} are available in its local context.</p>
+    `;
+  }
+
+  const terminalNode = state.graph?.nodes?.find(
+    (node) => node.kind === "terminal" && node.data?.goalId === goalId
+  );
+  if (terminalNode) {
+    return `
+      <div class="goal-popup-header">Goal ${escapeHtml(goalId)}</div>
+      <p>This goal has terminal status <strong>${escapeHtml(terminalNode.data?.status || "unknown")}</strong>.</p>
+    `;
+  }
+
+  return `
+    <div class="goal-popup-header">Goal ${escapeHtml(goalId)}</div>
+    <p>No goal snapshot is available for this identifier in the loaded graph.</p>
   `;
 }
 
