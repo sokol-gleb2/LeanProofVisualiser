@@ -13,6 +13,7 @@ const dom = {
   viewport: document.getElementById("viewport"),
   edgesLayer: document.getElementById("edges-layer"),
   nodesLayer: document.getElementById("nodes-layer"),
+  theoremDetails: document.getElementById("theorem-details"),
   nodeDetails: document.getElementById("node-details"),
   traceStats: document.getElementById("trace-stats"),
   graphSummary: document.getElementById("graph-summary"),
@@ -88,6 +89,7 @@ function applyGraph(graph) {
   state.selectedNodeId = null;
   state.layout = computeLayout(graph);
   renderGraph();
+  renderTheoremDetails(graph);
   renderStats(graph);
   renderNodeDetails(null);
   hideEmptyState();
@@ -381,6 +383,14 @@ function renderNodeDetails(node) {
       detailRow("Target", node.data?.target || ""),
       detailRow("Goal ID", node.data?.goalId || ""),
     ]));
+
+    if (node.data?.declaration) {
+      blocks.push(detailBlock("Declaration", [
+        detailRow("Kind", node.data.declaration.kind || ""),
+        detailRow("Name", node.data.declaration.name || ""),
+        detailRow("Statement", node.data.declaration.statement || ""),
+      ]));
+    }
     blocks.push(`
       <section class="detail-block">
         <h3>Context</h3>
@@ -409,12 +419,66 @@ function renderNodeDetails(node) {
   dom.nodeDetails.innerHTML = blocks.join("");
 }
 
+function renderTheoremDetails(graph) {
+  const declaration =
+    graph.metadata?.primaryDeclaration ||
+    (graph.metadata?.declarations || [])[0] ||
+    null;
+
+  if (!declaration) {
+    const rootGoalId = (graph.metadata?.rootGoalIds || [])[0];
+    const rootNode = graph.nodes.find((node) => node.id === rootGoalId);
+    if (!rootNode) {
+      dom.theoremDetails.innerHTML = "<p>No theorem metadata available.</p>";
+      return;
+    }
+
+    dom.theoremDetails.innerHTML = [
+      detailBlock("Root Goal", [
+        detailRow("Target", rootNode.data?.target || ""),
+        detailRow("Goal ID", rootNode.data?.goalId || ""),
+        detailRow("Hypotheses", String(rootNode.data?.context?.length || 0)),
+      ]),
+    ].join("");
+    return;
+  }
+
+  const rootNode = graph.nodes.find((node) => node.id === declaration.rootGoalId);
+  const blocks = [
+    detailBlock("Statement", [
+      detailRow("Kind", declaration.kind || ""),
+      detailRow("Name", declaration.name || ""),
+      detailRow("Header", declaration.header || ""),
+      detailRow("Statement", declaration.statement || ""),
+    ]),
+  ];
+
+  if (rootNode) {
+    blocks.push(detailBlock("Initial Goal", [
+      detailRow("Target", rootNode.data?.target || ""),
+      detailRow("Goal ID", rootNode.data?.goalId || ""),
+      detailRow("Hypotheses", String(rootNode.data?.context?.length || 0)),
+    ]));
+  }
+
+  const declarationCount = graph.metadata?.declarations?.length || 0;
+  if (declarationCount > 1) {
+    blocks.push(detailBlock("File", [
+      detailRow("Declarations", String(declarationCount)),
+      detailRow("Source", graph.metadata?.sourcePath || ""),
+    ]));
+  }
+
+  dom.theoremDetails.innerHTML = blocks.join("");
+}
+
 function renderStats(graph) {
   const metadata = graph.metadata || {};
   dom.traceStats.innerHTML = detailBlock("Counts", [
     detailRow("Nodes", String(metadata.nodeCount ?? graph.nodes.length)),
     detailRow("Edges", String(metadata.edgeCount ?? graph.edges.length)),
     detailRow("Steps", String(metadata.stepCount ?? 0)),
+    detailRow("Declarations", String((metadata.declarations || []).length)),
     detailRow("Roots", (metadata.rootGoalIds || []).join(", ") || "None"),
     detailRow("Leaf Goals", (metadata.leafGoalIds || []).join(", ") || "None"),
     detailRow("Open Leaves", (metadata.openLeafGoalIds || []).join(", ") || "None"),
@@ -431,7 +495,9 @@ function updateGraphSummary(graph) {
   const roots = metadata.rootGoalIds?.length || 0;
   const leaves = metadata.leafGoalIds?.length || 0;
   const steps = metadata.stepCount ?? 0;
-  dom.graphSummary.textContent = `${steps} tactics, ${roots} root goal${roots === 1 ? "" : "s"}, ${leaves} leaf goal${leaves === 1 ? "" : "s"}.`;
+  const theoremName = metadata.primaryDeclaration?.name;
+  const theoremPrefix = theoremName ? `${theoremName}: ` : "";
+  dom.graphSummary.textContent = `${theoremPrefix}${steps} tactics, ${roots} root goal${roots === 1 ? "" : "s"}, ${leaves} leaf goal${leaves === 1 ? "" : "s"}.`;
 }
 
 function detailBlock(title, rows) {

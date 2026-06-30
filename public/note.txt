@@ -2,3 +2,8 @@ From lean-visualiser:
 python3 -m http.server 8000
 
 -> http://localhost:8000/public/index.html
+
+1. Extract declaration headers from the original Lean source during instrumentation.
+2. Carry that metadata forward as a sidecar JSON.
+3. Attach the relevant theorem metadata to the DAG root goal and graph metadata.
+4. Render a theorem summary panel so the viewer opens with the statement, binders, and target visible before any tactic node is selected.
